@@ -1,0 +1,76 @@
+name: WinCE
+
+on:
+  push:
+    branches: [wince]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  wince-cxx20-smoke:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/salman-javed-nz/docker-cegcc-arm:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          arm-mingw32ce-g++ --version
+          arm-mingw32ce-ld --version
+
+      - name: Build C++20 WinCE executable
+        run: |
+          mkdir -p out/wince
+          arm-mingw32ce-g++ \
+            -std=gnu++20 \
+            -O2 \
+            -Wall -Wextra \
+            -D_WIN32_WCE=0x0420 \
+            -DWIN32_PLATFORM_PSPC=400 \
+            -DUNICODE -D_UNICODE \
+            -mcpu=xscale \
+            wince/smoke/hello.cpp \
+            -o out/wince/hello-wince.exe
+
+      - name: Inspect PE image
+        run: |
+          arm-mingw32ce-objdump -f out/wince/hello-wince.exe
+          arm-mingw32ce-objdump -p out/wince/hello-wince.exe | tee out/wince/pe.txt
+          test -s out/wince/hello-wince.exe
+
+      - name: Upload smoke executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: hello-wince
+          path: out/wince/
+
+  clang-xscale-frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Clang
+        run: sudo apt-get update && sudo apt-get install -y clang llvm
+
+      - name: Verify modern C++20 frontend can target XScale
+        run: |
+          mkdir -p out/clang
+          cat > out/clang/probe.cpp <<'EOF'
+          #include <concepts>
+          template<class T>
+          concept Incrementable = requires(T v) { ++v; };
+          static_assert(Incrementable<int>);
+          int f(int x) { return x + 1; }
+          EOF
+          clang++ \
+            --target=armv5te-none-eabi \
+            -mcpu=xscale \
+            -std=c++20 \
+            -ffreestanding \
+            -c out/clang/probe.cpp \
+            -o out/clang/probe.o
+          llvm-readobj --file-headers out/clang/probe.o
