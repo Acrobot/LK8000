@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+DEPS="$ROOT/out/wince-deps"
+
+mkdir -p "$DEPS/src" "$DEPS/include/GeographicLib"
+
+if [ ! -d "$DEPS/src/geographiclib/.git" ]; then
+  rm -rf "$DEPS/src/geographiclib"
+  git clone --depth 1 --branch v2.5.1 \
+    https://github.com/geographiclib/geographiclib.git \
+    "$DEPS/src/geographiclib"
+fi
+
+# GeographicLib generates Config.h during its normal configure/CMake build.
+# The current object-level bring-up only needs the public headers, so provide
+# the exact release version/configuration here. The full static WinCE library
+# will be built by this script once we reach the link milestone.
+cat > "$DEPS/include/GeographicLib/Config.h" <<'EOF'
+#pragma once
+#define GEOGRAPHICLIB_VERSION_STRING "2.5.1"
+#define GEOGRAPHICLIB_VERSION_MAJOR 2
+#define GEOGRAPHICLIB_VERSION_MINOR 5
+#define GEOGRAPHICLIB_VERSION_PATCH 1
+#define GEOGRAPHICLIB_DATA "\\Application Data\\GeographicLib"
+#define GEOGRAPHICLIB_HAVE_LONG_DOUBLE 1
+#define GEOGRAPHICLIB_WORDS_BIGENDIAN 0
+#define GEOGRAPHICLIB_PRECISION 2
+#ifndef GEOGRAPHICLIB_SHARED_LIB
+#define GEOGRAPHICLIB_SHARED_LIB 0
+#endif
+EOF
+
+printf '%s\n' "$DEPS"
