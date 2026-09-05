@@ -1,7 +1,9 @@
 diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.cpp
 --- a/Common/Source/Screen/LKBitmap.cpp
 +++ b/Common/Source/Screen/LKBitmap.cpp
-@@ -19,4 +19,6 @@
+@@ -17,9 +17,11 @@
+ #include "MessageLog.h"
+ 
 -#ifdef _WIN32
 +#if defined(_WIN32) && !defined(UNDER_CE)
  #include "Screen/GDI/WICImageLoad.h"
@@ -10,7 +12,12 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
 +#endif
 +
 +#ifndef _WIN32
-@@ -44,4 +46,8 @@
+ #include "resource_data.h"
+ #endif
+ 
+@@ -42,12 +44,16 @@
+ bool LKBitmap::LoadFromFile(const TCHAR* FilePath) {
+     Reset();
  #ifdef _WIN32
 +#ifdef UNDER_CE
 +    bitmap = (HBITMAP) SHLoadDIBitmap(FilePath);
@@ -19,7 +26,18 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
 +#endif
      return IsDefined();
  #elif defined(ANDROID)
-@@ -85,11 +91,18 @@
+     return LoadFile(FilePath);
+ #else
+     return LoadPNGFile(FilePath);
+ #endif
+     return false;
+ }
+@@ -80,20 +86,27 @@
+ bool LKBitmap::LoadFromMemory(const void* data, size_t size) {
+   Reset();
+   if (!data || size == 0) {
+     return false;
+   }
  #ifdef _WIN32
 +#ifdef UNDER_CE
 +  // WIC is a desktop Windows API and is unavailable on Pocket PC 2003.
@@ -38,14 +56,25 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
    }
 +#endif
  #else
+   Bitmap::Load(ConstBuffer<void>(data, size));
+   return IsDefined();
+ #endif
+ }
 diff --git a/Common/Source/Screen/GDI/WICImageLoad.cpp b/Common/Source/Screen/GDI/WICImageLoad.cpp
 --- a/Common/Source/Screen/GDI/WICImageLoad.cpp
 +++ b/Common/Source/Screen/GDI/WICImageLoad.cpp
-@@ -1,2 +1,3 @@
+@@ -1,3 +1,4 @@
 +#ifndef UNDER_CE
  #include "WICImageLoad.h"
  #include <stdexcept>
-@@ -76,2 +77,3 @@
+ #include <string>
+@@ -70,8 +71,9 @@
+   if (FAILED(converter->CopyPixels(nullptr, stride, imageSize,
+                                    static_cast<BYTE*>(bits)))) {
+     DeleteObject(hBmp);
+     throw std::runtime_error("Failed to copy image pixels.");
+   }
+ 
    return LKBitmap(hBmp);
  }
 +#endif
