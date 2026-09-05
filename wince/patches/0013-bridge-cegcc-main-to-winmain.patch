@@ -1,0 +1,20 @@
+diff --git a/Common/Source/lk8000.cpp b/Common/Source/lk8000.cpp
+--- a/Common/Source/lk8000.cpp
++++ b/Common/Source/lk8000.cpp
+@@ -565,3 +565,14 @@ int main(int argc, char *argv[]) {
+ }
+ 
+ #endif
++
++#ifdef UNDER_CE
++/*
++ * Modern cegcc's Pocket PC startup object provides the native WinMain entry
++ * point and dispatches it to main(). LK8000 historically provided WinMain
++ * directly, which worked with the older toolchain used for the released CE
++ * builds. Keep LK8000's Windows startup code intact and provide the small
++ * adapter expected by the current cross toolchain.
++ */
++int main(int, char**) {
++  return WinMain(GetModuleHandle(NULL), NULL, NULL, SW_SHOW);
++}
++#endif
