@@ -46,10 +46,17 @@ cat > "$DEPS/include/GeographicLib/Config.h" <<'EOF'
 #endif
 EOF
 
-# zziplib's source headers include a generated zzip/_config.h. Its checked-in
-# MSVC configuration is the closest supported Windows configuration and is
-# sufficient for compile-level bring-up with mingw32ce. build-deps.sh replaces
-# this with a target-generated configuration for the linked libraries.
+# zziplib's source headers include a generated zzip/_config.h. Start from the
+# checked-in Windows configuration, then disable the desktop Win32 directory/
+# mmap path. cegcc's <direct.h> is only a forwarding shim and Pocket PC 2003
+# does not provide the desktop CRT behind it. LK8000 supplies its own file I/O
+# plugin to zzip, while the memory-disk path does not need Win32 mmap support.
 cp "$DEPS/src/zziplib/zzip/_msvc.h" "$DEPS/include/zzip/_config.h"
+cat >> "$DEPS/include/zzip/_config.h" <<'EOF'
+
+/* Pocket PC 2003 / cegcc target overrides. */
+#undef ZZIP_HAVE_DIRECT_H
+#undef ZZIP_HAVE_WINBASE_H
+EOF
 
 printf '%s\n' "$DEPS"
