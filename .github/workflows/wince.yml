@@ -33,6 +33,7 @@ jobs:
             -o out/wince/runtime-wince.exe
 
       - name: Inspect PE images
+        shell: bash
         run: |
           arm-mingw32ce-objdump -f out/wince/hello-wince.exe
           arm-mingw32ce-objdump -p out/wince/hello-wince.exe > out/wince/hello-pe.txt
@@ -46,6 +47,41 @@ jobs:
         with:
           name: wince-smoke
           path: out/wince/
+
+  current-master-object-probe:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/salman-javed-nz/docker-cegcc-arm:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile representative current-master objects
+        shell: bash
+        continue-on-error: true
+        run: |
+          mkdir -p out/wince
+          set -o pipefail
+          rc=0
+          for target in \
+            Bin/WINCE/xcs/Screen/GDI/Init.o \
+            Bin/WINCE/xcs/Event/GDI/Loop.o \
+            Bin/WINCE/OS/Win/Memory.o \
+            Bin/WINCE/Library/poco/Mutex.o \
+            Bin/WINCE/Comm/SerialPort.o
+          do
+            echo "===== $target =====" | tee -a out/wince/current-master-probe.log
+            sh wince/build-current.sh "$target" V=2 2>&1 | tee -a out/wince/current-master-probe.log || rc=1
+          done
+          exit "$rc"
+
+      - name: Upload current-master probe log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-master-probe
+          path: out/wince/current-master-probe.log
 
   pockethle-runtime-smoke:
     runs-on: ubuntu-24.04
