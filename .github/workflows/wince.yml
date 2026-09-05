@@ -57,6 +57,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare WinCE dependency headers
+        run: sh wince/prepare-deps.sh
+
       - name: Compile representative current-master objects
         shell: bash
         continue-on-error: true
