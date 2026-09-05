@@ -63,7 +63,7 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
 diff --git a/Makefile b/Makefile
 --- a/Makefile
 +++ b/Makefile
-@@ -779,10 +779,13 @@
+@@ -779,10 +779,11 @@
  
  ifeq ($(CONFIG_WIN32),y)
 -SCREEN += \
