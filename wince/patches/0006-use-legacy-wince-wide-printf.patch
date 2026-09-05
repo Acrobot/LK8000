@@ -1,0 +1,26 @@
+diff --git a/Common/Source/MessageLog.cpp b/Common/Source/MessageLog.cpp
+--- a/Common/Source/MessageLog.cpp
++++ b/Common/Source/MessageLog.cpp
+@@ -1,5 +1,16 @@
+ void StartupStoreV(const wchar_t* fmt, va_list args)
+ {
++#ifdef UNDER_CE
++  // The WinCE CRT exposes the legacy bounded _vsntprintf API rather than
++  // the C99-style four-argument vswprintf used by modern libcs.
++  TCHAR buf[1024];
++  _vsntprintf(buf, sizeof(buf) / sizeof(buf[0]), fmt, args);
++  buf[(sizeof(buf) / sizeof(buf[0])) - 1] = L'\0';
++
++  TrimRight(buf);
++  std::string utf8_str = to_utf8(buf);
++  StartupStoreWrite(utf8_str.c_str());
++#else
+   va_list args_copy;
+   va_copy(args_copy, args);
+ 
+@@ -21,4 +32,5 @@
+   std::string utf8_str = to_utf8(buf);
+ 
+   StartupStoreWrite(utf8_str.c_str());
++#endif
+ }
