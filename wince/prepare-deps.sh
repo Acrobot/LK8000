@@ -47,16 +47,21 @@ cat > "$DEPS/include/GeographicLib/Config.h" <<'EOF'
 EOF
 
 # zziplib's source headers include a generated zzip/_config.h. Start from the
-# checked-in Windows configuration, then disable the desktop Win32 directory/
-# mmap path. cegcc's <direct.h> is only a forwarding shim and Pocket PC 2003
-# does not provide the desktop CRT behind it. LK8000 supplies its own file I/O
-# plugin to zzip, while the memory-disk path does not need Win32 mmap support.
+# checked-in Windows configuration, then tailor it to cegcc/Pocket PC 2003.
+# cegcc's <direct.h> is only a forwarding shim and Pocket PC 2003 does not
+# provide the desktop CRT behind it. Its string.h does provide strcasecmp(),
+# so tell zzip to use that declaration instead of its older non-const fallback.
+# LK8000 supplies its own file I/O plugin to zzip, while the memory-disk path
+# does not need Win32 mmap support.
 cp "$DEPS/src/zziplib/zzip/_msvc.h" "$DEPS/include/zzip/_config.h"
 cat >> "$DEPS/include/zzip/_config.h" <<'EOF'
 
 /* Pocket PC 2003 / cegcc target overrides. */
 #undef ZZIP_HAVE_DIRECT_H
 #undef ZZIP_HAVE_WINBASE_H
+#ifndef ZZIP_HAVE_STRCASECMP
+#define ZZIP_HAVE_STRCASECMP 1
+#endif
 EOF
 
 printf '%s\n' "$DEPS"
