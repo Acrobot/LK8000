@@ -1,0 +1,66 @@
+name: WinCE hx4700 device package
+
+on:
+  push:
+    branches: [wince]
+  workflow_dispatch:
+
+jobs:
+  hx4700-device-package:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/salman-javed-nz/docker-cegcc-arm:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install host build tools
+        run: |
+          apt-get update
+          apt-get install -y xsltproc
+
+      - name: Prepare and cross-build WinCE dependencies
+        run: |
+          sh wince/prepare-deps.sh
+          sh wince/build-deps.sh
+
+      - name: Build current LK8000 for Pocket PC 2003 / XScale
+        shell: bash
+        run: |
+          set -o pipefail
+          sh wince/build-current.sh -j2 LK8000-WINCE.exe V=1 \
+            2>&1 | tee full-build.log
+
+      - name: Validate PE image
+        shell: bash
+        run: |
+          test -s LK8000-WINCE.exe
+          arm-mingw32ce-objdump -f LK8000-WINCE.exe | tee lk8000-file.txt
+          arm-mingw32ce-objdump -p LK8000-WINCE.exe | tee lk8000-pe.txt
+          grep -q "pei-arm-wince-little" lk8000-file.txt
+          grep -q "COREDLL.dll" lk8000-pe.txt
+
+      - name: Assemble hx4700 SD-card test package
+        shell: bash
+        run: |
+          sh wince/package-device.sh LK8000-WINCE.exe out/hx4700-device-test
+          test -s out/hx4700-device-test/LK8000/LK8000-PPC2003.exe
+          test -s out/hx4700-device-test/LK8000/_Maps/DEMO.LKM
+          test -s out/hx4700-device-test/LK8000/_Maps/DEMO.DEM
+          test -s out/hx4700-device-test/LK8000/_Language/language.json
+          if find out/hx4700-device-test -type l | grep -q .; then
+            echo "Device package contains symlinks, which are not suitable for FAT/WinCE media." >&2
+            exit 1
+          fi
+          du -sh out/hx4700-device-test
+          find out/hx4700-device-test -maxdepth 2 -type f | sort | head -100
+
+      - name: Upload hx4700 device test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lk8000-hx4700-device-test
+          path: out/hx4700-device-test/
+          if-no-files-found: error
