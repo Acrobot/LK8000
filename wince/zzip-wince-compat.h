@@ -15,38 +15,6 @@
 #endif
 
 /*
- * WinCE's C runtime has no POSIX strcasecmp().  Avoid zziplib's fallback here:
- * that fallback currently has a non-const function signature and also assumes
- * tolower() has been declared. ZIP entry names used by LK8000 are ASCII, so a
- * locale-independent ASCII comparison is sufficient and has the same const
- * signature as strcmp().
- */
-static inline unsigned char zzip_wince_ascii_lower(unsigned char ch) {
-  return (ch >= 'A' && ch <= 'Z') ? (unsigned char)(ch + ('a' - 'A')) : ch;
-}
-
-static inline int zzip_wince_strcasecmp(const char* a, const char* b) {
-  if (!a)
-    return b ? -1 : 0;
-  if (!b)
-    return 1;
-
-  while (*a && *b) {
-    const unsigned char ca = zzip_wince_ascii_lower((unsigned char)*a);
-    const unsigned char cb = zzip_wince_ascii_lower((unsigned char)*b);
-    if (ca != cb)
-      return (int)ca - (int)cb;
-    ++a;
-    ++b;
-  }
-
-  return (int)zzip_wince_ascii_lower((unsigned char)*a) -
-         (int)zzip_wince_ascii_lower((unsigned char)*b);
-}
-
-#define strcasecmp zzip_wince_strcasecmp
-
-/*
  * Pocket PC 2003's CRT as exposed by cegcc does not provide the normal
  * strerror() declaration/implementation expected by current zziplib.
  * zzip only uses it to turn OS-level failures into diagnostic text, so a
