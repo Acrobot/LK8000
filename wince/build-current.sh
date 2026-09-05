@@ -49,6 +49,19 @@ CPPFLAGS_WINCE="\
 -DNDEBUG \
 -fsigned-char"
 
+# These archives are produced by wince/build-deps.sh. Keeping them as explicit
+# paths avoids teaching the current upstream Makefile about a retired target.
+# The group handles the mutual zzip/zlib references without depending on archive
+# order. Object-only probe targets do not invoke the linker, so the paths are
+# harmless before the archives have been built.
+STATIC_DEPS="\
+-Wl,--start-group \
+$DEPS/lib/libGeographicLib.a \
+$DEPS/lib/libzzipmmapped.a \
+$DEPS/lib/libzzip.a \
+$DEPS/lib/libz.a \
+-Wl,--end-group"
+
 exec make \
   TARGET=WINCE \
   CONFIG_WIN32=y \
@@ -68,5 +81,5 @@ exec make \
   CFLAGS="-O2 -g0" \
   TARGET_ARCH="-mwin32 -mcpu=xscale" \
   LDFLAGS="-Wl,--major-subsystem-version=4 -Wl,--minor-subsystem-version=20" \
-  LDLIBS="-Wl,-Bstatic -lstdc++ -latomic -Wl,-Bdynamic -lcommctrl -lole32 -loleaut32 -luuid -lws2 -laygshell -limgdecmp" \
+  LDLIBS="$STATIC_DEPS -Wl,-Bstatic -lstdc++ -latomic -Wl,-Bdynamic -lcommctrl -lole32 -loleaut32 -luuid -lws2 -laygshell -limgdecmp" \
   "$@"
