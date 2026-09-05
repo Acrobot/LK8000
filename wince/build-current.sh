@@ -6,12 +6,21 @@ set -eu
 # which have higher precedence than ordinary Makefile assignments.
 #
 # During bring-up this can also build a single object, e.g.:
+#   sh wince/prepare-deps.sh
 #   sh wince/build-current.sh Bin/WINCE/xcs/Screen/GDI/Init.o V=2
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
+DEPS="$ROOT/out/wince-deps"
+if [ ! -f "$DEPS/include/GeographicLib/Config.h" ]; then
+  echo "WinCE dependency headers are missing; run: sh wince/prepare-deps.sh" >&2
+  exit 2
+fi
+
 CPPFLAGS_WINCE="\
+-I$DEPS/include \
+-I$DEPS/src/geographiclib/include \
 -ICommon/Header/mingw32compat \
 -ICommon/Header/mingw32compat/zlib \
 -ICommon/Header/mingw32compat/WinCE \
