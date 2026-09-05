@@ -1,7 +1,7 @@
 diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface.cpp
 --- a/Common/Source/Screen/LKSurface.cpp
 +++ b/Common/Source/Screen/LKSurface.cpp
-@@ -504,7 +504,15 @@ TransparentImage is not defined in arm-mingw32ce
+@@ -504,7 +504,14 @@ TransparentImage is not defined in arm-mingw32ce
  #ifndef ENABLE_OPENGL
  bool LKSurface::TransparentCopy(int xoriginDest, int yoriginDest, int wDest, int hDest, const LKSurface& Surface, int xoriginSrc, int yoriginSrc) {
  #ifdef USE_GDI
@@ -19,7 +19,7 @@ diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface
 diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/AlphaBlend.cpp
 --- a/Common/Source/Screen/GDI/AlphaBlend.cpp
 +++ b/Common/Source/Screen/GDI/AlphaBlend.cpp
-@@ -222,3 +222,91 @@ HANDLEERROR:
+@@ -222,3 +222,95 @@ HANDLEERROR:
  
      return FALSE;
  }
