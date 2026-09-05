@@ -1,13 +1,14 @@
 diff --git a/Common/Source/wcecompat/errno.cpp b/Common/Source/wcecompat/errno.cpp
 --- a/Common/Source/wcecompat/errno.cpp
 +++ b/Common/Source/wcecompat/errno.cpp
-@@ -19,5 +19,48 @@
+@@ -19,5 +19,139 @@
  
  
  #include <errno.h>
 +#ifdef UNDER_CE
 +#include <locale.h>
 +#include <limits.h>
++#include <math.h>
 +#endif
  
  int errno;
@@ -48,5 +49,95 @@ diff --git a/Common/Source/wcecompat/errno.cpp b/Common/Source/wcecompat/errno.c
 +  }
 +
 +  return &locale;
++}
++
++/*
++ * CE 4.2's CRT predates the C99 math entry points used by current
++ * GeographicLib. The compiler provides declarations for several of them but
++ * COREDLL does not export implementations. Keep the compatibility surface
++ * local to WinCE and express it in terms of the older math primitives that
++ * are available on Pocket PC 2003.
++ */
++static double wince_round_quotient(double q) {
++  double n = floor(q);
++  const double fraction = q - n;
++  if (fraction > 0.5 ||
++      (fraction == 0.5 && fmod(n, 2.0) != 0.0)) {
++    n += 1.0;
++  }
++  return n;
++}
++
++static double wince_remainder_impl(double x, double y, int* quotient) {
++  const double n = wince_round_quotient(x / y);
++  if (quotient) {
++    *quotient = (int)fmod(n, 8.0);
++  }
++  return x - n * y;
++}
++
++extern "C" double fmax(double x, double y) {
++  if (x != x) return y;
++  if (y != y) return x;
++  return x > y ? x : y;
++}
++
++extern "C" float fmaxf(float x, float y) {
++  return (float)fmax((double)x, (double)y);
++}
++
++extern "C" long double fmaxl(long double x, long double y) {
++  return (long double)fmax((double)x, (double)y);
++}
++
++extern "C" double fmin(double x, double y) {
++  if (x != x) return y;
++  if (y != y) return x;
++  return x < y ? x : y;
++}
++
++extern "C" float fminf(float x, float y) {
++  return (float)fmin((double)x, (double)y);
++}
++
++extern "C" long double fminl(long double x, long double y) {
++  return (long double)fmin((double)x, (double)y);
++}
++
++extern "C" double remainder(double x, double y) {
++  return wince_remainder_impl(x, y, 0);
++}
++
++extern "C" float remainderf(float x, float y) {
++  return (float)wince_remainder_impl((double)x, (double)y, 0);
++}
++
++extern "C" long double remainderl(long double x, long double y) {
++  return (long double)wince_remainder_impl((double)x, (double)y, 0);
++}
++
++extern "C" double remquo(double x, double y, int* quotient) {
++  return wince_remainder_impl(x, y, quotient);
++}
++
++extern "C" float remquof(float x, float y, int* quotient) {
++  return (float)wince_remainder_impl((double)x, (double)y, quotient);
++}
++
++extern "C" long double remquol(long double x, long double y, int* quotient) {
++  return (long double)wince_remainder_impl((double)x, (double)y, quotient);
++}
++
++extern "C" double atanh(double x) {
++  if (x == 0.0 || fabs(x) < 1e-12) return x;
++  return 0.5 * log((1.0 + x) / (1.0 - x));
++}
++
++extern "C" float atanhf(float x) {
++  return (float)atanh((double)x);
++}
++
++extern "C" long double atanhl(long double x) {
++  return (long double)atanh((double)x);
 +}
 +#endif
