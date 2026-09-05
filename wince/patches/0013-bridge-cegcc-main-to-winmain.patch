@@ -1,7 +1,7 @@
 diff --git a/Common/Source/lk8000.cpp b/Common/Source/lk8000.cpp
 --- a/Common/Source/lk8000.cpp
 +++ b/Common/Source/lk8000.cpp
-@@ -565,3 +565,14 @@ int main(int argc, char *argv[]) {
+@@ -565,3 +565,16 @@ int main(int argc, char *argv[]) {
  }
  
  #endif
