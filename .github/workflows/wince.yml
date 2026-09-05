@@ -7,6 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  patch-stack-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate compatibility patch stack
+        run: |
+          sh wince/apply-patches.sh
+          git diff --check
+
   wince-cxx20-smoke:
     runs-on: ubuntu-24.04
     container:
