@@ -1,7 +1,7 @@
 diff --git a/Common/Source/Comm/SerialPort.cpp b/Common/Source/Comm/SerialPort.cpp
 --- a/Common/Source/Comm/SerialPort.cpp
 +++ b/Common/Source/Comm/SerialPort.cpp
-@@ -37,8 +37,13 @@ bool SerialPort::Initialize() {
+@@ -37,8 +37,14 @@ bool SerialPort::Initialize() {
      TCHAR sysPortName[20];
      DCB PortDCB;
  
