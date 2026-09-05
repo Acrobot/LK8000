@@ -66,15 +66,14 @@ diff --git a/Makefile b/Makefile
 @@ -779,10 +779,13 @@
  
  ifeq ($(CONFIG_WIN32),y)
- SCREEN += \
+-SCREEN += \
 -	$(SRC_SCREEN)/GDI/AlphaBlend.cpp \
 -	$(SRC_SCREEN)/GDI/WICImageLoad.cpp \
-+	$(SRC_SCREEN)/GDI/AlphaBlend.cpp \
++SCREEN += $(SRC_SCREEN)/GDI/AlphaBlend.cpp
  
 -	
 +ifneq ($(CONFIG_PPC2003),y)
-+SCREEN += \
-+	$(SRC_SCREEN)/GDI/WICImageLoad.cpp \
++SCREEN += $(SRC_SCREEN)/GDI/WICImageLoad.cpp
 +endif
 +
  endif
