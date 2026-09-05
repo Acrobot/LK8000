@@ -1,7 +1,7 @@
 diff --git a/Common/Source/wcecompat/errno.cpp b/Common/Source/wcecompat/errno.cpp
 --- a/Common/Source/wcecompat/errno.cpp
 +++ b/Common/Source/wcecompat/errno.cpp
-@@ -19,6 +19,42 @@
+@@ -19,5 +19,48 @@
  
  
  #include <errno.h>
