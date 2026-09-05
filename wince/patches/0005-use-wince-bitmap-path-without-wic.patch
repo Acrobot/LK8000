@@ -10,8 +10,6 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
 +#endif
 +
 +#ifndef _WIN32
- #include "resource_data.h"
- #endif
 @@ -1,4 +1,8 @@
  #ifdef _WIN32
 +#ifdef UNDER_CE
@@ -38,7 +36,7 @@ diff --git a/Common/Source/Screen/LKBitmap.cpp b/Common/Source/Screen/LKBitmap.c
    }
 +#endif
  #else
- diff --git a/Common/Source/Screen/GDI/WICImageLoad.cpp b/Common/Source/Screen/GDI/WICImageLoad.cpp
+diff --git a/Common/Source/Screen/GDI/WICImageLoad.cpp b/Common/Source/Screen/GDI/WICImageLoad.cpp
 --- a/Common/Source/Screen/GDI/WICImageLoad.cpp
 +++ b/Common/Source/Screen/GDI/WICImageLoad.cpp
 @@ -1,2 +1,3 @@
