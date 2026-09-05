@@ -20,9 +20,10 @@ COMMON="-O2 -g0 -mcpu=xscale -D_WIN32_WCE=0x0420 -D_WIN32_IE=0x0420 -DWIN32_PLAT
 rm -rf "$OBJ"
 mkdir -p "$LIB" "$OBJ/zlib" "$OBJ/zzip" "$OBJ/zzipmmapped" "$OBJ/geographiclib"
 
-# zlib: build the standard static library directly. This avoids running a
-# host-oriented configure script while keeping the exact upstream sources.
-ZLIB_SRCS="adler32.c compress.c crc32.c deflate.c gzclose.c gzlib.c gzread.c gzwrite.c infback.c inffast.c inflate.c inftrees.c trees.c uncompr.c zutil.c"
+# zlib: LK8000/zzip need the compression/inflate API, not zlib's gz* file
+# wrapper. The latter selects desktop Windows _lseeki64(), which Pocket PC
+# 2003 does not provide, so leave those four optional translation units out.
+ZLIB_SRCS="adler32.c compress.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c uncompr.c zutil.c"
 for file in $ZLIB_SRCS; do
   obj="$OBJ/zlib/${file%.c}.o"
   "$CC" $COMMON -I"$SRC/zlib" -c "$SRC/zlib/$file" -o "$obj"
