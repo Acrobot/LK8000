@@ -1,0 +1,29 @@
+diff --git a/Common/Source/OS/Win/Memory.cpp b/Common/Source/OS/Win/Memory.cpp
+--- a/Common/Source/OS/Win/Memory.cpp
++++ b/Common/Source/OS/Win/Memory.cpp
+@@ -54,7 +54,25 @@ unsigned long CheckMaxHeapBlock(void) {
+ // memory defragmentation, since on pocket pc platforms there is no
+ // automatic defragmentation.
+ void MyCompactHeaps() {
++#ifndef UNDER_CE
+   HeapCompact(GetProcessHeap(),0);
++#else
++  // HeapCompact is a desktop Win32 API and is not exported by Pocket PC
++  // 2003. LK8000's last WinCE release used the CE-specific CompactAllHeaps
++  // export when available; restore that behaviour for current sources.
++  typedef DWORD (_stdcall *CompactAllHeapsFn) (void);
++  static CompactAllHeapsFn CompactAllHeaps = NULL;
++  static bool init = false;
++  if (!init) {
++    CompactAllHeaps = (CompactAllHeapsFn)
++      GetProcAddress(LoadLibrary(_T("coredll.dll")),
++                     _T("CompactAllHeaps"));
++    init = true;
++  }
++  if (CompactAllHeaps) {
++    CompactAllHeaps();
++  }
++#endif
+ }
+ 
+ 
