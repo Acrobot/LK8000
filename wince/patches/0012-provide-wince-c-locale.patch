@@ -1,0 +1,52 @@
+diff --git a/Common/Source/wcecompat/errno.cpp b/Common/Source/wcecompat/errno.cpp
+--- a/Common/Source/wcecompat/errno.cpp
++++ b/Common/Source/wcecompat/errno.cpp
+@@ -19,6 +19,42 @@
+ 
+ 
+ #include <errno.h>
++#ifdef UNDER_CE
++#include <locale.h>
++#include <limits.h>
++#endif
+ 
+ int errno;
++
++#ifdef UNDER_CE
++/*
++ * The Pocket PC 2003 CRT headers expose localeconv(), but the runtime does
++ * not provide the symbol. Modern nlohmann/json uses it while parsing and
++ * formatting floating-point values. LK8000 does not switch locales on this
++ * target, so expose the invariant C locale expected by the application.
++ */
++extern "C" struct lconv* localeconv(void) {
++  static char decimal_point[] = ".";
++  static char empty[] = "";
++  static struct lconv locale = {};
++  static bool initialized = false;
++
++  if (!initialized) {
++    locale.decimal_point = decimal_point;
++    locale.thousands_sep = empty;
++    locale.grouping = empty;
++    locale.int_curr_symbol = empty;
++    locale.currency_symbol = empty;
++    locale.mon_decimal_point = empty;
++    locale.mon_thousands_sep = empty;
++    locale.mon_grouping = empty;
++    locale.positive_sign = empty;
++    locale.negative_sign = empty;
++    locale.int_frac_digits = CHAR_MAX;
++    locale.frac_digits = CHAR_MAX;
++    locale.p_cs_precedes = CHAR_MAX;
++    locale.p_sep_by_space = CHAR_MAX;
++    locale.n_cs_precedes = CHAR_MAX;
++    locale.n_sep_by_space = CHAR_MAX;
++    locale.p_sign_posn = CHAR_MAX;
++    locale.n_sign_posn = CHAR_MAX;
++    initialized = true;
++  }
++
++  return &locale;
++}
++#endif
