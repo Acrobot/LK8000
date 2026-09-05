@@ -5,12 +5,18 @@ set -eu
 # upstream Makefile. All target-specific values are command-line overrides,
 # which have higher precedence than ordinary Makefile assignments.
 #
+# The small source compatibility delta is kept as explicit patches under
+# wince/patches. They are checked/applied before each build so upstream drift
+# becomes an immediate, reviewable failure.
+#
 # During bring-up this can also build a single object, e.g.:
 #   sh wince/prepare-deps.sh
 #   sh wince/build-current.sh Bin/WINCE/xcs/Screen/GDI/Init.o V=2
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
+
+sh wince/apply-patches.sh
 
 DEPS="$ROOT/out/wince-deps"
 if [ ! -f "$DEPS/include/GeographicLib/Config.h" ] || [ ! -f "$DEPS/include/zzip/_config.h" ]; then
