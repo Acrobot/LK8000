@@ -92,6 +92,7 @@ jobs:
             Bin/WINCE/Calc/FreeFlight.o \
             Bin/WINCE/Devices/devGDL90.o \
             Bin/WINCE/Tracking/Tracking.o \
+            Bin/WINCE/Tracking/LiveTrack24V2Handler.o \
             Bin/WINCE/Tracking/Default/http_session.o \
             Bin/WINCE/Dialogs/dlgConfiguration.o \
             Bin/WINCE/Dialogs/dlgTracking.o
