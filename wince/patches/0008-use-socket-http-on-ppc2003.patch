@@ -1,0 +1,26 @@
+diff --git a/Common/Source/Tracking/http_session.h b/Common/Source/Tracking/http_session.h
+--- a/Common/Source/Tracking/http_session.h
++++ b/Common/Source/Tracking/http_session.h
+@@ -13,4 +13,4 @@
+-#if defined(_WIN32) || defined(_WIN64)
++#if (defined(_WIN32) || defined(_WIN64)) && !defined(UNDER_CE)
+   #include "WinHttp/http_session.h"
+ #elif defined(USE_CURL)
+   #include "Curl/http_session.h"
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -1290,4 +1290,12 @@
+-ifeq ($(CONFIG_WIN32),y)
++ifeq ($(CONFIG_PPC2003),y)
++ TRACKING += \
++   $(SRC_TRACKING)/Default/http_session.cpp \
++   $(SRC_TRACKING)/FFVLTracking.cpp \
++   $(SRC_TRACKING)/Traccar.cpp \
++   $(SRC_TRACKING)/OsmAnd.cpp \
++   $(SRC_TRACKING)/PureTrack.cpp \
++
++else ifeq ($(CONFIG_WIN32),y)
+  TRACKING += \
+    $(SRC_TRACKING)/WinHttp/http_session.cpp \
+    $(SRC_TRACKING)/FFVLTracking.cpp \
