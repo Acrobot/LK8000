@@ -1,7 +1,7 @@
 diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface.cpp
 --- a/Common/Source/Screen/LKSurface.cpp
 +++ b/Common/Source/Screen/LKSurface.cpp
-@@ -180,12 +180,20 @@ template <int mode>
+@@ -180,11 +180,20 @@ template <int mode>
  class StretchBltMode {
   public:
    StretchBltMode(HDC hdc) : m_hdc(hdc) {
