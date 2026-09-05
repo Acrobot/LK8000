@@ -30,10 +30,11 @@ for file in $ZLIB_SRCS; do
 done
 "$AR" rcs "$LIB/libz.a" "$OBJ"/zlib/*.o
 
-# zziplib: use the Windows configuration prepared by prepare-deps.sh. Both
-# archives are linked by current LK8000; they deliberately get separate fetch.o
-# objects because that source belongs to both upstream targets.
-ZZIP_FLAGS="$COMMON -DHAVE_CONFIG_H -I$DEPS/include -I$SRC/zlib -I$SRC/zziplib"
+# zziplib: use the Windows configuration prepared by prepare-deps.sh, with a
+# tiny Pocket PC CRT shim for diagnostic strerror(). Both archives are linked
+# by current LK8000; they deliberately get separate fetch.o objects because
+# that source belongs to both upstream targets.
+ZZIP_FLAGS="$COMMON -DHAVE_CONFIG_H -include $ROOT/wince/zzip-wince-compat.h -I$DEPS/include -I$SRC/zlib -I$SRC/zziplib"
 ZZIP_SRCS="dir.c err.c file.c info.c plugin.c stat.c write.c zip.c fetch.c"
 for file in $ZZIP_SRCS; do
   obj="$OBJ/zzip/${file%.c}.o"
