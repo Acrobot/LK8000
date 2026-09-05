@@ -1,0 +1,39 @@
+diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface.cpp
+--- a/Common/Source/Screen/LKSurface.cpp
++++ b/Common/Source/Screen/LKSurface.cpp
+@@ -180,12 +180,20 @@ template <int mode>
+ class StretchBltMode {
+  public:
+   StretchBltMode(HDC hdc) : m_hdc(hdc) {
++#ifdef UNDER_CE
++    // SetStretchBltMode is not part of the Pocket PC 2003 import surface.
++    // StretchBlt itself is available and historically ran with the default
++    // mode on this target.
++    old_mode = 0;
++#else
+     old_mode = ::SetStretchBltMode(hdc, mode);
+     ::SetBrushOrgEx(hdc, 0, 0, NULL);
++#endif
+   }
+   ~StretchBltMode() {
++#ifndef UNDER_CE
+     ::SetStretchBltMode(m_hdc, old_mode);
++#endif
+   }
+ 
+  private:
+diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/AlphaBlend.cpp
+--- a/Common/Source/Screen/GDI/AlphaBlend.cpp
++++ b/Common/Source/Screen/GDI/AlphaBlend.cpp
+@@ -139,9 +139,11 @@ BOOL DoAlphaBlend_internal(
+   int nHeightSrc,              // Source height.
+   DWORD dwSourceWeight)        // Source weighting (between 0 and 255).
+ {
++#ifndef UNDER_CE
+     if(pfnSetStretchBltMode) {
+         pfnSetStretchBltMode = SetStretchBltMode;
+     }
++#endif
+ 
+ 
+ 
