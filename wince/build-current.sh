@@ -6,7 +6,7 @@ set -eu
 # which have higher precedence than ordinary Makefile assignments.
 #
 # During bring-up this can also build a single object, e.g.:
-#   ./wince/build-current.sh Bin/WINCE/xcs/Screen/GDI/Init.o V=2
+#   sh wince/build-current.sh Bin/WINCE/xcs/Screen/GDI/Init.o V=2
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
@@ -42,7 +42,7 @@ exec make \
   CE_MINOR=20 \
   CE_PLATFORM=400 \
   MCPU=-mcpu=xscale \
-  PKG_CONFIG="$ROOT/wince/pkg-config-empty.sh" \
+  PKG_CONFIG="sh $ROOT/wince/pkg-config-empty.sh" \
   WIN32_RESOURCE=y \
   CPPFLAGS="$CPPFLAGS_WINCE" \
   CXXFLAGS="-std=gnu++20 -O2 -g0" \
