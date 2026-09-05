@@ -1,0 +1,117 @@
+diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface.cpp
+--- a/Common/Source/Screen/LKSurface.cpp
++++ b/Common/Source/Screen/LKSurface.cpp
+@@ -504,7 +504,15 @@ TransparentImage is not defined in arm-mingw32ce
+ #ifndef ENABLE_OPENGL
+ bool LKSurface::TransparentCopy(int xoriginDest, int yoriginDest, int wDest, int hDest, const LKSurface& Surface, int xoriginSrc, int yoriginSrc) {
+ #ifdef USE_GDI
++#ifdef UNDER_CE
++    extern BOOL DoTransparentBlt_internal(HDC,int,int,int,int,HDC,int,int,int,int,COLORREF);
++    return DoTransparentBlt_internal(*this, xoriginDest, yoriginDest, wDest, hDest,
++                                     Surface, xoriginSrc, yoriginSrc, wDest, hDest,
++                                     COLOR_WHITE);
++#else
+     return ::TransparentBlt(*this, xoriginDest, yoriginDest, wDest, hDest, Surface, xoriginSrc, yoriginSrc, wDest, hDest, COLOR_WHITE);
++#endif
+ #else
+     if(_pCanvas && Surface.IsDefined()) {
+         _pCanvas->CopyTransparentWhite(xoriginDest, yoriginDest, wDest, hDest, Surface, xoriginSrc, yoriginSrc);
+diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/AlphaBlend.cpp
+--- a/Common/Source/Screen/GDI/AlphaBlend.cpp
++++ b/Common/Source/Screen/GDI/AlphaBlend.cpp
+@@ -222,3 +222,91 @@ HANDLEERROR:
+ 
+     return FALSE;
+ }
++
++#ifdef UNDER_CE
++/*
++ * TransparentBlt is a Windows CE 5 API and is therefore unavailable on the
++ * CE 4.2 Pocket PC target. Implement the small subset LK8000 needs by
++ * capturing source/destination into 24-bpp DIB sections, applying the colour
++ * key in memory, and copying the result back with core GDI BitBlt.
++ */
++BOOL DoTransparentBlt_internal(
++  HDC hdcDest,
++  int nXOriginDest,
++  int nYOriginDest,
++  int nWidthDest,
++  int nHeightDest,
++  HDC hdcSrc,
++  int nXOriginSrc,
++  int nYOriginSrc,
++  int nWidthSrc,
++  int nHeightSrc,
++  COLORREF transparent)
++{
++    HDC srcDC = NULL;
++    HDC dstDC = NULL;
++    HBITMAP srcBitmap = NULL;
++    HBITMAP dstBitmap = NULL;
++    BOOL result = FALSE;
++
++    if (nWidthDest <= 0 || nHeightDest <= 0 ||
++        nWidthSrc <= 0 || nHeightSrc <= 0) {
++        return FALSE;
++    }
++
++    srcBitmap = Create24BPPDIBSection(hdcDest, nWidthDest, nHeightDest);
++    dstBitmap = Create24BPPDIBSection(hdcDest, nWidthDest, nHeightDest);
++    if (!srcBitmap || !dstBitmap) goto cleanup;
++
++    srcDC = CreateCompatibleDC(hdcDest);
++    dstDC = CreateCompatibleDC(hdcDest);
++    if (!srcDC || !dstDC) goto cleanup;
++
++    SelectObject(srcDC, srcBitmap);
++    SelectObject(dstDC, dstBitmap);
++
++    if (!StretchBlt(srcDC, 0, 0, nWidthDest, nHeightDest,
++                    hdcSrc, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc,
++                    SRCCOPY)) {
++        goto cleanup;
++    }
++    if (!BitBlt(dstDC, 0, 0, nWidthDest, nHeightDest,
++                hdcDest, nXOriginDest, nYOriginDest, SRCCOPY)) {
++        goto cleanup;
++    }
++
++    BITMAP srcInfo;
++    BITMAP dstInfo;
++    if (!GetObject(srcBitmap, sizeof(srcInfo), &srcInfo) ||
++        !GetObject(dstBitmap, sizeof(dstInfo), &dstInfo) ||
++        !srcInfo.bmBits || !dstInfo.bmBits) {
++        goto cleanup;
++    }
++
++    const BYTE transparentRed = GetRValue(transparent);
++    const BYTE transparentGreen = GetGValue(transparent);
++    const BYTE transparentBlue = GetBValue(transparent);
++
++    LPBYTE srcRow = static_cast<LPBYTE>(srcInfo.bmBits);
++    LPBYTE dstRow = static_cast<LPBYTE>(dstInfo.bmBits);
++    for (int y = 0; y < nHeightDest; ++y) {
++        RGBTRIPLE* srcPixel = reinterpret_cast<RGBTRIPLE*>(srcRow);
++        RGBTRIPLE* dstPixel = reinterpret_cast<RGBTRIPLE*>(dstRow);
++        for (int x = 0; x < nWidthDest; ++x) {
++            if (srcPixel[x].rgbtRed != transparentRed ||
++                srcPixel[x].rgbtGreen != transparentGreen ||
++                srcPixel[x].rgbtBlue != transparentBlue) {
++                dstPixel[x] = srcPixel[x];
++            }
++        }
++        srcRow += srcInfo.bmWidthBytes;
++        dstRow += dstInfo.bmWidthBytes;
++    }
++
++    result = BitBlt(hdcDest, nXOriginDest, nYOriginDest,
++                    nWidthDest, nHeightDest, dstDC, 0, 0, SRCCOPY);
++
++cleanup:
++    if (srcDC) DeleteDC(srcDC);
++    if (dstDC) DeleteDC(dstDC);
++    if (srcBitmap) DeleteObject(srcBitmap);
++    if (dstBitmap) DeleteObject(dstBitmap);
++    return result;
++}
++#endif
