@@ -1,0 +1,144 @@
+diff --git a/Common/Source/Airspace/LKAirspace.cpp b/Common/Source/Airspace/LKAirspace.cpp
+--- a/Common/Source/Airspace/LKAirspace.cpp
++++ b/Common/Source/Airspace/LKAirspace.cpp
+@@ -107,7 +107,7 @@
+   if (!class_name || !type_name) {
+     return class_name ? class_name : (type_name ? type_name : tstring());
+   }
+-  return std::format(_T("{} ({})"), type_name, class_name);
++  return tstring(type_name) + _T(" (") + class_name + _T(")");
+ }
+ 
+ LKColor CAirspaceBase::TypeColor() const {
+diff --git a/Common/Source/SaveLoadTask/CTaskFileHelper.cpp b/Common/Source/SaveLoadTask/CTaskFileHelper.cpp
+--- a/Common/Source/SaveLoadTask/CTaskFileHelper.cpp
++++ b/Common/Source/SaveLoadTask/CTaskFileHelper.cpp
+@@ -710,7 +710,11 @@
+             return false;
+         }
+ 
++#ifdef UNDER_CE
++        std::ofstream file_out(to_utf8(szFileName));
++#else
+         std::ofstream file_out(szFileName);
++#endif
+         rapidxml::print(std::ostream_iterator<char>(file_out), doc);
+         file_out.close();
+     } catch (std::exception& e) {
+diff --git a/Common/Source/Form/Clipboard.cpp b/Common/Source/Form/Clipboard.cpp
+--- a/Common/Source/Form/Clipboard.cpp
++++ b/Common/Source/Form/Clipboard.cpp
+@@ -37,14 +37,14 @@
+ class ScopeGlobalLock {
+ public:
+   ScopeGlobalLock(HANDLE hdata) : _hdata(hdata) {
+-    _pdata = static_cast<const TypeT*>(::GlobalLock(hdata));
++    _pdata = static_cast<const TypeT*>(GlobalLock(hdata));
+     if (!_pdata) {
+       throw std::runtime_error("failed to lock clipboard data");
+     }
+   }
+ 
+   ~ScopeGlobalLock() {
+-    ::GlobalUnlock(_hdata);
++    GlobalUnlock(_hdata);
+   }
+ 
+   operator const TypeT*() const {
+diff --git a/Common/Source/Library/StringFunctions.cpp b/Common/Source/Library/StringFunctions.cpp
+--- a/Common/Source/Library/StringFunctions.cpp
++++ b/Common/Source/Library/StringFunctions.cpp
+@@ -233,5 +233,10 @@
+ int to_integer(const std::wstring_view& sv) {
+-    return std::stoi(std::wstring(sv));
++#ifdef UNDER_CE
++  const std::wstring value(sv);
++  return static_cast<int>(wcstol(value.c_str(), nullptr, 10));
++#else
++  return std::stoi(std::wstring(sv));
++#endif
+ }
+ 
+ 
+diff --git a/Common/Source/Library/TimeFunctions.cpp b/Common/Source/Library/TimeFunctions.cpp
+--- a/Common/Source/Library/TimeFunctions.cpp
++++ b/Common/Source/Library/TimeFunctions.cpp
+@@ -9,11 +9,38 @@
+ namespace {
+ 
+ #ifdef _WIN32
++#ifdef UNDER_CE
++constexpr bool is_leap_year(int year) {
++  return (year % 4 == 0) && (year % 100 != 0 || year % 400 == 0);
++}
++
++constexpr int days_before_year(int year) {
++  --year;
++  return year * 365 + year / 4 - year / 100 + year / 400;
++}
++
++constexpr int days_before_month(int year, int month) {
++  constexpr int cumulative_days[12] = {
++      0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
++  return cumulative_days[month - 1] +
++         ((month > 2 && is_leap_year(year)) ? 1 : 0);
++}
++
++time_t timegm(struct tm* tp) {
++  const int year = tp->tm_year + 1900;
++  const int month = tp->tm_mon + 1;
++  const int days = days_before_year(year) - days_before_year(1970) +
++                   days_before_month(year, month) + tp->tm_mday - 1;
++  return time_t(days) * 86400 + time_t(tp->tm_hour) * 3600 +
++         time_t(tp->tm_min) * 60 + tp->tm_sec;
++}
++#else
+ // timegm() is a GNU extension, not standard C)
+ //    not available by default on MinGW / Windows 
+ time_t timegm (struct tm *tp) {
+   return _mkgmtime(tp);
+ } 
++#endif
+ 
+ #endif
+ 
+diff --git a/Common/Source/Calc/FreeFlight.cpp b/Common/Source/Calc/FreeFlight.cpp
+--- a/Common/Source/Calc/FreeFlight.cpp
++++ b/Common/Source/Calc/FreeFlight.cpp
+@@ -358,9 +358,18 @@
+         TCHAR Temp[30];
+         Units::TimeToTextS(Temp, LocalTime(Calculated->FreeFlightStartTime));          
+ 
++#ifdef UNDER_CE
++        TCHAR comment[160];
++        lk::snprintf(comment, _T("%s: %s @%.0f%s QNH"),
++                     MsgToken<1754>(),  // Free flight start
++                     Temp, Units::ToAltitude(Calculated->FreeFlightStartQNH),
++                     Units::GetAltitudeName());
++        WayPointList[RESWP_FREEFLY].Comment = comment;
++#else
+         WayPointList[RESWP_FREEFLY].Comment =
+             std::format(_T("{}: {} @{:.0f}{} QNH"),
+                         MsgToken<1754>(),  // Free flight start
+                         Temp, Units::ToAltitude(Calculated->FreeFlightStartQNH),
+                         Units::GetAltitudeName());
++#endif
+   });
+diff --git a/Common/Source/Devices/GDL90/decoders/traffic.h b/Common/Source/Devices/GDL90/decoders/traffic.h
+--- a/Common/Source/Devices/GDL90/decoders/traffic.h
++++ b/Common/Source/Devices/GDL90/decoders/traffic.h
+@@ -10,5 +10,6 @@
+ #include "../helpers.h"
+ 
++#include <limits>
+ #include <optional>
+ #include <utility>
+ 
+@@ -120,5 +120,6 @@
+   static constexpr int32_t invalid_pressure_alt = -1000;
+   static constexpr uint16_t invalid_horiz_velocity = 0xFFFF;
+-  static constexpr int32_t invalid_vert_velocity = INT32_MAX;
++  static constexpr int32_t invalid_vert_velocity =
++      std::numeric_limits<int32_t>::max();
+ 
+   bool is_valid_position() const noexcept {
