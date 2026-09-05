@@ -111,6 +111,7 @@ jobs:
             Bin/WINCE/xcs/Screen/GDI/Init.o \
             Bin/WINCE/xcs/Event/GDI/Loop.o \
             Bin/WINCE/OS/Win/Memory.o \
+            Bin/WINCE/wcecompat/errno.o \
             Bin/WINCE/Library/poco/Mutex.o \
             Bin/WINCE/Comm/SerialPort.o \
             Bin/WINCE/Airspace/LKAirspace.o \
@@ -129,6 +130,8 @@ jobs:
             echo "===== $target =====" | tee -a out/wince/current-master-probe.log
             sh wince/build-current.sh "$target" V=2 2>&1 | tee -a out/wince/current-master-probe.log
           done
+
+          arm-mingw32ce-nm Bin/WINCE/wcecompat/errno.o | grep -E 'fmax$|fmin$|remquo$|atanh$'
 
       - name: Upload current-master probe log
         uses: actions/upload-artifact@v4
