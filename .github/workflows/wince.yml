@@ -83,7 +83,18 @@ jobs:
             Bin/WINCE/xcs/Event/GDI/Loop.o \
             Bin/WINCE/OS/Win/Memory.o \
             Bin/WINCE/Library/poco/Mutex.o \
-            Bin/WINCE/Comm/SerialPort.o
+            Bin/WINCE/Comm/SerialPort.o \
+            Bin/WINCE/Airspace/LKAirspace.o \
+            Bin/WINCE/SaveLoadTask/CTaskFileHelper.o \
+            Bin/WINCE/Form/Clipboard.o \
+            Bin/WINCE/Library/StringFunctions.o \
+            Bin/WINCE/Library/TimeFunctions.o \
+            Bin/WINCE/Calc/FreeFlight.o \
+            Bin/WINCE/Devices/devGDL90.o \
+            Bin/WINCE/Tracking/Tracking.o \
+            Bin/WINCE/Tracking/Default/http_session.o \
+            Bin/WINCE/Dialogs/dlgConfiguration.o \
+            Bin/WINCE/Dialogs/dlgTracking.o
           do
             echo "===== $target =====" | tee -a out/wince/current-master-probe.log
             sh wince/build-current.sh "$target" V=2 2>&1 | tee -a out/wince/current-master-probe.log
