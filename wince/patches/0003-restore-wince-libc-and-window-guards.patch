@@ -1,7 +1,7 @@
 diff --git a/Common/Source/xcs/Util/WStringAPI.hxx b/Common/Source/xcs/Util/WStringAPI.hxx
 --- a/Common/Source/xcs/Util/WStringAPI.hxx
 +++ b/Common/Source/xcs/Util/WStringAPI.hxx
-@@ -2,5 +2,9 @@
+@@ -156,5 +156,9 @@
  static inline int
  StringCollate(const wchar_t *a, const wchar_t *b)
  {
@@ -14,7 +14,7 @@ diff --git a/Common/Source/xcs/Util/WStringAPI.hxx b/Common/Source/xcs/Util/WStr
 diff --git a/Common/Source/xcs/Util/StringAPI.hxx b/Common/Source/xcs/Util/StringAPI.hxx
 --- a/Common/Source/xcs/Util/StringAPI.hxx
 +++ b/Common/Source/xcs/Util/StringAPI.hxx
-@@ -2,5 +2,9 @@
+@@ -157,5 +157,9 @@
  static inline int
  StringCollate(const char *a, const char *b)
  {
@@ -27,7 +27,7 @@ diff --git a/Common/Source/xcs/Util/StringAPI.hxx b/Common/Source/xcs/Util/Strin
 diff --git a/Common/Source/OS/Win/WindowResize.cpp b/Common/Source/OS/Win/WindowResize.cpp
 --- a/Common/Source/OS/Win/WindowResize.cpp
 +++ b/Common/Source/OS/Win/WindowResize.cpp
-@@ -1,4 +1,4 @@
+@@ -15,4 +15,4 @@
 -#if defined(USE_FULLSCREEN)
 +#if defined(UNDER_CE) || defined(USE_FULLSCREEN)
    //
