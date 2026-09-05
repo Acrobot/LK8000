@@ -3,6 +3,18 @@
 #include <errno.h>
 
 /*
+ * zziplib's internal fallback helpers use both spellings below. Its checked-in
+ * MSVC config only defines _zzip_restrict; on the cegcc/WinCE C frontend the
+ * other spelling is therefore parsed as an identifier in a parameter list.
+ */
+#ifndef _zzip_restrict
+#define _zzip_restrict
+#endif
+#ifndef __zzip_restrict
+#define __zzip_restrict
+#endif
+
+/*
  * Pocket PC 2003's CRT as exposed by cegcc does not provide the normal
  * strerror() declaration/implementation expected by current zziplib.
  * zzip only uses it to turn OS-level failures into diagnostic text, so a
