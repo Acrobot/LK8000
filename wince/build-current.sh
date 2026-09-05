@@ -13,7 +13,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
 DEPS="$ROOT/out/wince-deps"
-if [ ! -f "$DEPS/include/GeographicLib/Config.h" ]; then
+if [ ! -f "$DEPS/include/GeographicLib/Config.h" ] || [ ! -f "$DEPS/include/zzip/_config.h" ]; then
   echo "WinCE dependency headers are missing; run: sh wince/prepare-deps.sh" >&2
   exit 2
 fi
@@ -21,6 +21,7 @@ fi
 CPPFLAGS_WINCE="\
 -I$DEPS/include \
 -I$DEPS/src/geographiclib/include \
+-I$DEPS/src/zziplib \
 -ICommon/Header/mingw32compat \
 -ICommon/Header/mingw32compat/zlib \
 -ICommon/Header/mingw32compat/WinCE \
