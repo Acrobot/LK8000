@@ -19,7 +19,7 @@ diff --git a/Common/Source/Screen/LKSurface.cpp b/Common/Source/Screen/LKSurface
 diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/AlphaBlend.cpp
 --- a/Common/Source/Screen/GDI/AlphaBlend.cpp
 +++ b/Common/Source/Screen/GDI/AlphaBlend.cpp
-@@ -222,3 +222,95 @@ HANDLEERROR:
+@@ -222,3 +222,97 @@ HANDLEERROR:
  
      return FALSE;
  }
@@ -76,6 +76,7 @@ diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/
 +        goto cleanup;
 +    }
 +
++    {
 +    BITMAP srcInfo;
 +    BITMAP dstInfo;
 +    if (!GetObject(srcBitmap, sizeof(srcInfo), &srcInfo) ||
@@ -106,6 +107,7 @@ diff --git a/Common/Source/Screen/GDI/AlphaBlend.cpp b/Common/Source/Screen/GDI/
 +
 +    result = BitBlt(hdcDest, nXOriginDest, nYOriginDest,
 +                    nWidthDest, nHeightDest, dstDC, 0, 0, SRCCOPY);
++    }
 +
 +cleanup:
 +    if (srcDC) DeleteDC(srcDC);
