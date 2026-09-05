@@ -59,6 +59,35 @@ jobs:
           name: wince-smoke
           path: out/wince/
 
+  wince-deps-build:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/salman-javed-nz/docker-cegcc-arm:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare dependency sources
+        run: sh wince/prepare-deps.sh
+
+      - name: Cross-build static dependencies
+        run: sh wince/build-deps.sh
+
+      - name: Inspect ARM archives
+        run: |
+          ls -lh out/wince-deps/lib
+          for lib in out/wince-deps/lib/*.a; do
+            echo "===== $lib ====="
+            arm-mingw32ce-ar t "$lib" | head -20
+          done
+
+      - name: Upload static dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: wince-static-deps
+          path: out/wince-deps/lib/
+
   current-master-object-probe:
     runs-on: ubuntu-24.04
     container:
