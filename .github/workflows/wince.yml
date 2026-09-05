@@ -153,24 +153,41 @@ jobs:
           apt-get update
           apt-get install -y xsltproc
 
-      - name: Prepare WinCE dependency headers
-        run: sh wince/prepare-deps.sh
+      - name: Prepare and cross-build WinCE dependencies
+        run: |
+          sh wince/prepare-deps.sh
+          sh wince/build-deps.sh
 
-      - name: Probe complete current-master build
+      - name: Build complete current-master executable
         shell: bash
-        continue-on-error: true
         run: |
           mkdir -p out/wince
           set -o pipefail
-          sh wince/build-current.sh -k -j2 LK8000-WINCE.exe V=1 \
+          sh wince/build-current.sh -j2 LK8000-WINCE.exe V=1 \
             2>&1 | tee out/wince/full-master-probe.log
+
+      - name: Inspect linked LK8000 PE image
+        shell: bash
+        run: |
+          test -s LK8000-WINCE.exe
+          arm-mingw32ce-objdump -f LK8000-WINCE.exe | tee out/wince/lk8000-file.txt
+          arm-mingw32ce-objdump -p LK8000-WINCE.exe | tee out/wince/lk8000-pe.txt
+          grep -q "pei-arm-wince-little" out/wince/lk8000-file.txt
+          grep -q "COREDLL.dll" out/wince/lk8000-pe.txt
 
       - name: Upload full-build probe log
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: full-master-probe
-          path: out/wince/full-master-probe.log
+          path: out/wince/
+
+      - name: Upload linked current LK8000
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: lk8000-current-wince
+          path: LK8000-WINCE.exe
 
   pockethle-runtime-smoke:
     runs-on: ubuntu-24.04
