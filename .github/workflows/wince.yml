@@ -21,31 +21,63 @@ jobs:
           arm-mingw32ce-g++ --version
           arm-mingw32ce-ld --version
 
-      - name: Build C++20 WinCE executable
+      - name: Build C++20 WinCE executables
         run: |
           mkdir -p out/wince
-          arm-mingw32ce-g++ \
-            -std=gnu++20 \
-            -O2 \
-            -Wall -Wextra \
-            -D_WIN32_WCE=0x0420 \
-            -DWIN32_PLATFORM_PSPC=400 \
-            -DUNICODE -D_UNICODE \
-            -mcpu=xscale \
+          COMMON_FLAGS="-std=gnu++20 -O2 -Wall -Wextra -D_WIN32_WCE=0x0420 -DWIN32_PLATFORM_PSPC=400 -DUNICODE -D_UNICODE -mcpu=xscale"
+          arm-mingw32ce-g++ $COMMON_FLAGS \
             wince/smoke/hello.cpp \
             -o out/wince/hello-wince.exe
+          arm-mingw32ce-g++ $COMMON_FLAGS \
+            wince/smoke/runtime.cpp \
+            -o out/wince/runtime-wince.exe
 
-      - name: Inspect PE image
+      - name: Inspect PE images
         run: |
           arm-mingw32ce-objdump -f out/wince/hello-wince.exe
-          arm-mingw32ce-objdump -p out/wince/hello-wince.exe | tee out/wince/pe.txt
-          test -s out/wince/hello-wince.exe
+          arm-mingw32ce-objdump -p out/wince/hello-wince.exe > out/wince/hello-pe.txt
+          arm-mingw32ce-objdump -f out/wince/runtime-wince.exe
+          arm-mingw32ce-objdump -p out/wince/runtime-wince.exe > out/wince/runtime-pe.txt
+          grep -q "pei-arm-wince-little" <(arm-mingw32ce-objdump -f out/wince/runtime-wince.exe)
+          grep -q "COREDLL.dll" out/wince/runtime-pe.txt
 
-      - name: Upload smoke executable
+      - name: Upload smoke executables
         uses: actions/upload-artifact@v4
         with:
-          name: hello-wince
+          name: wince-smoke
           path: out/wince/
+
+  pockethle-runtime-smoke:
+    runs-on: ubuntu-24.04
+    needs: wince-cxx20-smoke
+
+    steps:
+      - name: Checkout LK8000 WinCE overlay
+        uses: actions/checkout@v4
+
+      - name: Download WinCE smoke executable
+        uses: actions/download-artifact@v4
+        with:
+          name: wince-smoke
+          path: out/wince
+
+      - name: Install PocketHLE native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential pkg-config libclang-dev libasound2-dev
+
+      - name: Build PocketHLE CLI with Unicorn
+        run: |
+          git clone --depth 1 https://github.com/j92580498-max/PocketHLE.git /tmp/PocketHLE
+          cd /tmp/PocketHLE
+          cargo build --release -p pocket-cli --features unicorn
+
+      - name: Inspect and execute WinCE ARM binary
+        run: |
+          /tmp/PocketHLE/target/release/pockethle pe-info "$GITHUB_WORKSPACE/out/wince/runtime-wince.exe"
+          timeout 30s /tmp/PocketHLE/target/release/pockethle run \
+            "$GITHUB_WORKSPACE/out/wince/runtime-wince.exe" \
+            --cpu unicorn
 
   clang-xscale-frontend:
     runs-on: ubuntu-24.04
@@ -60,7 +92,6 @@ jobs:
         run: |
           mkdir -p out/clang
           cat > out/clang/probe.cpp <<'EOF'
-          #include <concepts>
           template<class T>
           concept Incrementable = requires(T v) { ++v; };
           static_assert(Incrementable<int>);
