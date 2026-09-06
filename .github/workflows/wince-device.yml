@@ -64,3 +64,80 @@ jobs:
           name: lk8000-hx4700-device-test
           path: out/hx4700-device-test/
           if-no-files-found: error
+
+  hx4700-package-pockethle:
+    runs-on: ubuntu-24.04
+    needs: hx4700-device-package
+
+    steps:
+      - name: Download complete hx4700 package
+        uses: actions/download-artifact@v4
+        with:
+          name: lk8000-hx4700-device-test
+          path: out/device
+
+      - name: Install PocketHLE native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential pkg-config libclang-dev libasound2-dev
+
+      - name: Build PocketHLE CLI with Unicorn
+        run: |
+          git clone --depth 1 https://github.com/j92580498-max/PocketHLE.git /tmp/PocketHLE
+          cd /tmp/PocketHLE
+          cargo build --release -p pocket-cli --features unicorn
+
+      - name: Run package with hx4700 geometry and filesystem layout
+        shell: bash
+        run: |
+          set -o pipefail
+          PACKAGE="$GITHUB_WORKSPACE/out/device/LK8000"
+          EXE="$PACKAGE/LK8000-PPC2003.exe"
+          OUT="$GITHUB_WORKSPACE/out/pockethle-hx4700"
+          mkdir -p "$OUT/frames"
+
+          test -s "$EXE"
+          test -s "$PACKAGE/_Maps/DEMO.LKM"
+
+          # Reproduce the path layout the physical hx4700 will see.  In
+          # particular, GetModuleFileNameW reports the executable below
+          # \Storage Card\LK8000 so LK8000 derives all sibling data paths from
+          # the same location rather than from a synthetic emulator directory.
+          set +e
+          timeout 60s /tmp/PocketHLE/target/release/pockethle run "$EXE" \
+            --cpu unicorn \
+            --screen 480x640 \
+            --rom-dir "$PACKAGE" \
+            --rom-prefix '\Storage Card\LK8000\' \
+            --module-path '\Storage Card\LK8000\LK8000-PPC2003.exe' \
+            --trace-json "$OUT/api-trace.jsonl" \
+            --dump-frames-to "$OUT/frames" \
+            --dump-frame-stride 25 \
+            --max-frames 8 \
+            --message-budget 2000 \
+            2>&1 | tee "$OUT/run.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+
+          echo "$rc" > "$OUT/exit-code.txt"
+          test -s "$OUT/run.log"
+          test -s "$OUT/api-trace.jsonl"
+
+          echo "PocketHLE exit code: $rc"
+          echo "API trace calls: $(wc -l < "$OUT/api-trace.jsonl")"
+          echo "Captured frames: $(find "$OUT/frames" -type f | wc -l)"
+          find "$OUT/frames" -maxdepth 1 -type f -print | sort | tail -20
+
+          # PocketHLE is intentionally an HLE and may still lack APIs needed by
+          # LK8000.  At this stage a non-zero/timeout result is diagnostic, not
+          # a package failure; the trace and framebuffer captures are the test
+          # outputs we inspect and improve against.
+          exit 0
+
+      - name: Upload package-level PocketHLE diagnostics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lk8000-hx4700-pockethle
+          path: out/pockethle-hx4700/
+          if-no-files-found: error
